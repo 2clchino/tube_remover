@@ -1,0 +1,19 @@
+{
+    "manifest_version": 2,
+    "name": "Remove UnSubscribe Video",
+    "version": "1.0",
+  
+    "description": "Adds a solid red border to all webpages matching mozilla.org.",
+  
+    "icons": {
+      "48": "icons/main.png"
+    },
+  
+    "content_scripts": [
+      {
+        "matches": ["*://*.youtube.com/*"],
+        "js": ["rm_videos.js"]
+      }
+    ]
+  }
+  
