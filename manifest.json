@@ -1,19 +1,30 @@
 {
-    "manifest_version": 2,
-    "name": "Remove UnSubscribe Video",
-    "version": "1.0",
-  
-    "description": "Adds a solid red border to all webpages matching mozilla.org.",
-  
-    "icons": {
-      "48": "icons/main.png"
-    },
-  
-    "content_scripts": [
-      {
-        "matches": ["*://*.youtube.com/*"],
-        "js": ["rm_videos.js"]
-      }
-    ]
-  }
+  "manifest_version": 2,
+  "name": "Automatic deletion of uninteresting videos on YouTube",
+  "version": "1.0",
+
+  "description": "Adds a solid red border to all webpages matching mozilla.org.",
+
+  "icons": {
+    "48": "icons/main.png"
+  },
+
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+
+  "browser_action": {
+    "default_icon": "icons/main.png",
+    "default_title": "AutoRemoveVideo",
+    "default_popup": "popup/settings.html"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content_scripts/rm_videos.js"]
+    }
+  ]
+}
   
