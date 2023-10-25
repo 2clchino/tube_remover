@@ -1,31 +1,58 @@
 html,
 body {
-  width: 100px;
+    width: 300px;
 }
 
 .hidden {
-  display: none;
+    display: none;
 }
 
 button {
-  border: none;
-  width: 100%;
-  margin: 3% auto;
-  padding: 4px;
-  text-align: center;
-  font-size: 1.5em;
-  cursor: pointer;
-  background-color: #e5f2f2;
+    border: none;
+    width: 100%;
+    margin: 3% auto;
+    padding: 4px;
+    text-align: center;
+    font-size: 1em;
+    cursor: pointer;
+    background-color: #e5f2f2;
+}
+
+#add-list-container {
+    display: flex;
+    align-items: center;
+}
+
+#button-container {
+    display: flex;
+    flex-direction: row;
+    align-items: left;
+    text-align: left;
+}
+
+#button-container button {
+    border: none;
+    width: 40px;
+    margin: 4px;
+    padding: 4px;
+    text-align: center;
+    font-size: 1.5em;
+    cursor: pointer;
+    background-color: #e5f2f2;
+}
+
+#button-container p {
+    font-size: 0.8em;
 }
 
 button:hover {
-  background-color: #cff2f2;
+    background-color: #cff2f2;
 }
 
 button[type="reset"] {
-  background-color: #fbfbc9;
+    background-color: #fbfbc9;
 }
 
 button[type="reset"]:hover {
-  background-color: #eaea9d;
+    background-color: #eaea9d;
 }

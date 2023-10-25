@@ -1,10 +1,30 @@
 browser.runtime.onMessage.addListener((message) => {
-    const subscribedChannels = getSubscribedChannel().slice(12, -17);;
-    console.log(subscribedChannels)
-    browser.storage.local.set({ "channels" : subscribedChannels });
+    console.log(message.command);
+    if (message.command === "updateChannels") {
+        const subscribedChannels = getSubscribedChannels().slice(12, -17);
+        console.log(subscribedChannels);
+        updateSubscribedChannels(subscribedChannels);
+    }
 });
 
-function getSubscribedChannel() {
+async function updateSubscribedChannels(subscribedChannels) {
+    try {
+        const result = await browser.storage.local.get("channels");
+        const last_data = result.channels || [];
+        subscribedChannels.forEach(channel => {
+            if (!last_data.includes(channel)) {
+                last_data.push(channel);
+            }
+        });
+
+        await browser.storage.local.set({ "channels": last_data });
+        console.log("データが保存されました。");
+    } catch (error) {
+        console.error("エラーが発生しました: " + error);
+    }
+}
+
+function getSubscribedChannels() {
     meta_blks = document.getElementsByClassName("title style-scope ytd-guide-entry-renderer");
     console.log(meta_blks);
     const channels = [];

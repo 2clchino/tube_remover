@@ -5,6 +5,7 @@ function getVideoInfo() {
     browser.storage.local.get("channels").then(result => {
         const subscribedChannels = result.channels;
         if (subscribedChannels && Array.isArray(subscribedChannels)) {
+            var removed = []
             for (let i = 0; i < meta_blks.length; i++) {
                 const viewCnt = findElementsWithClass(meta_blks[i], '.inline-metadata-item.style-scope.ytd-video-meta-block');
                 const chName = findElementsWithClass(meta_blks[i], '.style-scope.ytd-channel-name.complex-string');
@@ -12,17 +13,22 @@ function getVideoInfo() {
                 // console.log(viewCnt)
                 var remove = false;
                 if (filterByViewCount(viewCnt)) {
-                    chName.forEach(element => {
+                    console.log(chName[0].textContent);
+                    if (chName.length > 0) {
+                        let element = chName[0]
                         if (!subscribedChannels.includes(element.textContent)) {
                             remove = true;
                             console.log(element.textContent);
-                            console.log("hello");
-                            meta_blks[i].replaceWith(meta_blks[i-1]);
+                            if (!removed.includes(element.textContent)) {
+                                removed.push(element.textContent);
+                            }
                         }
-                    });
+                    }
                 }
-                // meta_blks[i].style.visibility = remove ? "hidden" : "visible";
+                meta_blks[i].style.visibility = remove ? "hidden" : "visible";
             }
+            console.log(removed)
+            browser.storage.local.set({ "removed": removed });
         } else {
             console.log("channelsが見つかりません。");
         }
@@ -68,7 +74,7 @@ function extractAndConvertViews(viewsText) {
 const youtubeLogoButton = document.querySelector('#logo');
 if (youtubeLogoButton) {
     youtubeLogoButton.addEventListener('click', function() {
-        setTimeout(removeVideos, 2000);
+        setTimeout(removeVideos, 1000);
     });
 }
 
@@ -76,4 +82,4 @@ function removeVideos(){
     getVideoInfo();
 }
 
-setTimeout(removeVideos, 2000);
+setTimeout(removeVideos, 1000);
