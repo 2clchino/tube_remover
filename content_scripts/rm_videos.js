@@ -80,4 +80,4 @@ window.onload = function() {
     console.log("すべてのリソースが読み込まれました");
 };
 
-const mainInterval = setInterval(getVideoInfo, 500);
+const mainInterval = setInterval(getVideoByRow, 500);
