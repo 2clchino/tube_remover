@@ -1,34 +1,35 @@
-// const newStyle = document.createElement('style');
-// newStyle.innerText = '.ytd-video-meta-block{display:none!important;}';
-function getVideoInfo() {
-    meta_blks = document.getElementsByClassName("ytd-rich-item-renderer");
+function getVideoByRow() {
     browser.storage.local.get("channels").then(result => {
         const subscribedChannels = result.channels;
         if (subscribedChannels && Array.isArray(subscribedChannels)) {
             var removed = []
-            for (let i = 0; i < meta_blks.length; i++) {
-                const viewCnt = findElementsWithClass(meta_blks[i], '.inline-metadata-item.style-scope.ytd-video-meta-block');
-                const chName = findElementsWithClass(meta_blks[i], '.style-scope.ytd-channel-name.complex-string');
-                // console.log(chName)
-                // console.log(viewCnt)
-                var remove = false;
-                if (filterByViewCount(viewCnt)) {
-                    console.log(chName[0].textContent);
+            const richGridRows = document.querySelectorAll('.style-scope.ytd-rich-grid-row#contents');
+            const richGridRowsArray = Array.from(richGridRows);
+            richGridRowsArray.forEach(function(richGridRow) {
+                const itemRenderers = richGridRow.querySelectorAll('.ytd-rich-grid-media');
+                const itemRendererArray = Array.from(itemRenderers);
+                console.log(itemRendererArray.length)
+                for (let j = 0; j < itemRendererArray.length; j++) {
+                    const itemRenderer = itemRendererArray[j];
+                    const viewCnt = findElementsWithClass(itemRenderer, '.inline-metadata-item.style-scope.ytd-video-meta-block');
+                    const chName = findElementsWithClass(itemRenderer, '.style-scope.ytd-channel-name.complex-string');
+                    var remove = false;
                     if (chName.length > 0) {
                         let element = chName[0]
-                        if (!subscribedChannels.includes(element.textContent)) {
-                            remove = true;
-                            console.log(element.textContent);
+                        remove = !subscribedChannels.includes(element.textContent) && filterByViewCount(viewCnt) < 2000
+                        console.log(`${element.textContent}: ${filterByViewCount(viewCnt)} views. ${!subscribedChannels.includes(element.textContent)}, ${filterByViewCount(viewCnt) < 2000}, ${remove}`)
+                        if (remove) {
+                            var parentElement = itemRenderer.parentNode.parentNode.parentNode;
+                            parentElement.style.display = remove ? "none" : "inline";
                             if (!removed.includes(element.textContent)) {
                                 removed.push(element.textContent);
                             }
-                        }
+                        } 
                     }
                 }
-                meta_blks[i].style.visibility = remove ? "hidden" : "visible";
-            }
-            console.log(removed)
-            browser.storage.local.set({ "removed": removed });
+                console.log(removed)
+                browser.storage.local.set({ "removed": removed });
+            });
         } else {
             console.log("channelsが見つかりません。");
         }
@@ -42,13 +43,10 @@ function filterByViewCount(elements) {
     for (let i = 0; i < elements.length; i++) {
         if (elements[0].textContent.match("視聴") || elements[0].textContent.match("待機")) {
             const num = extractAndConvertViews(elements[0].textContent)
-            // console.log(num);
-            if (num < 2000) {
-                return true;
-            }
+            return num;
         }
     }
-    return false;
+    return 0;
 }
 
 function findElementsWithClass(container, className) {
@@ -70,16 +68,16 @@ function extractAndConvertViews(viewsText) {
     }
     return null;
 }
-
+var subInterval;
 const youtubeLogoButton = document.querySelector('#logo');
 if (youtubeLogoButton) {
     youtubeLogoButton.addEventListener('click', function() {
-        setTimeout(removeVideos, 1000);
+        setTimeout(getVideoByRow, 1000);
     });
 }
 
-function removeVideos(){
-    getVideoInfo();
-}
+window.onload = function() {
+    console.log("すべてのリソースが読み込まれました");
+};
 
-setTimeout(removeVideos, 1000);
+const mainInterval = setInterval(getVideoInfo, 500);

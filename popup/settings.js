@@ -47,17 +47,25 @@ function onActivePopup() {
     browser.storage.local.get("removed").then(result => {
         let blocked = result.removed || [];
         const buttonsContainer = document.getElementById("buttons-container");
-
         blocked.forEach(site => {
             const buttonContainer = document.createElement("div");
             buttonContainer.id = "button-container";
             const buttonElement = document.createElement("button");
             buttonElement.textContent = "+";
-            buttonElement.addEventListener("click", () => {
-                console.log("Unblocking: " + site);
-            });
             const pElement = document.createElement("p");
             pElement.textContent = site;
+            buttonElement.addEventListener("click", () => {
+                browser.storage.local.get("channels").then(result => {
+                    buttonElement.style.display = "none";
+                    let channels = result.channels || [];
+                    if (!channels.includes(site)) {
+                        channels.push(site);
+                    }
+                    pElement.textContent = "whitelist added"
+                    return browser.storage.local.set({ channels });
+                })
+                .catch(reportError);
+            });
             buttonContainer.appendChild(buttonElement);
             buttonContainer.appendChild(pElement);
             buttonsContainer.appendChild(buttonContainer)
