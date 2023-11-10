@@ -1,35 +1,24 @@
-function getVideoByRow() {
+function temp() {
     browser.storage.local.get("channels").then(result => {
         const subscribedChannels = result.channels;
         if (subscribedChannels && Array.isArray(subscribedChannels)) {
-            var removed = []
-            const richGridRows = document.querySelectorAll('.style-scope.ytd-rich-grid-row#contents');
-            const richGridRowsArray = Array.from(richGridRows);
-            richGridRowsArray.forEach(function(richGridRow) {
-                const itemRenderers = richGridRow.querySelectorAll('.ytd-rich-grid-media');
-                const itemRendererArray = Array.from(itemRenderers);
-                console.log(itemRendererArray.length)
-                for (let j = 0; j < itemRendererArray.length; j++) {
-                    const itemRenderer = itemRendererArray[j];
-                    const viewCnt = findElementsWithClass(itemRenderer, '.inline-metadata-item.style-scope.ytd-video-meta-block');
-                    const chName = findElementsWithClass(itemRenderer, '.style-scope.ytd-channel-name.complex-string');
-                    var remove = false;
-                    if (chName.length > 0) {
-                        let element = chName[0]
-                        remove = !subscribedChannels.includes(element.textContent) && filterByViewCount(viewCnt) < 2000
-                        console.log(`${element.textContent}: ${filterByViewCount(viewCnt)} views. ${!subscribedChannels.includes(element.textContent)}, ${filterByViewCount(viewCnt) < 2000}, ${remove}`)
-                        if (remove) {
-                            var parentElement = itemRenderer.parentNode.parentNode.parentNode;
-                            parentElement.style.display = remove ? "none" : "inline";
-                            if (!removed.includes(element.textContent)) {
-                                removed.push(element.textContent);
-                            }
-                        } 
-                    }
-                }
-                console.log(removed)
-                browser.storage.local.set({ "removed": removed });
-            });
+            const querySelector = '#video-title';
+            console.log(subscribedChannels)
+            let targetElement = null;
+            /*
+            if (~url.indexOf('/watch?')) {
+                targetElement = document
+                  .getElementById('related')
+                  ?.querySelector('#items');
+            } else {
+                targetElement = document.getElementById('contents');
+            }*/
+            targetElement = document.getElementById('contents');
+            if (targetElement != null) {
+                const removeElement = remove(querySelector)(subscribedChannels);
+                removeElement(targetElement.childNodes);
+                // observe(removeElement, targetElement);
+            }
         } else {
             console.log("channelsが見つかりません。");
         }
@@ -38,46 +27,59 @@ function getVideoByRow() {
     });
 }
 
-// 再生回数が少なければ true
-function filterByViewCount(elements) {
-    for (let i = 0; i < elements.length; i++) {
-        if (elements[0].textContent.match("視聴") || elements[0].textContent.match("待機")) {
-            const num = extractAndConvertViews(elements[0].textContent)
-            return num;
-        }
-    }
-    return 0;
-}
-
-function findElementsWithClass(container, className) {
-    const elements = container.querySelectorAll(className);
-    return Array.from(elements);
-}
-
-function extractAndConvertViews(viewsText) {
-    const match = viewsText.match(/[\d.]+/);
-    if (match) {
-        const number = parseFloat(match[0]);
-        if (viewsText.includes("万")) {
-            return number * 10000;
-        }
-        if (viewsText.includes("億")) {
-            return number * 100000000;
-        }
-        return number;
-    }
-    return null;
-}
-var subInterval;
-const youtubeLogoButton = document.querySelector('#logo');
-if (youtubeLogoButton) {
-    youtubeLogoButton.addEventListener('click', function() {
-        setTimeout(getVideoByRow, 1000);
+const remove = (querySelector) => (subscribedChannels) => (targetNodes) => {
+    var removed = []
+    targetNodes.forEach((node) => {
+        node.querySelectorAll(querySelector).forEach((titleElement) => {
+            // console.log(`${videoInfo.chName}: ${videoInfo.viewCnt}`)
+            const videoInfo = getVideoInfo(titleElement.outerHTML)
+            if (videoInfo != null){
+                if (!subscribedChannels.includes(videoInfo.chName) && videoInfo.viewCnt < 2000) {
+                    node.remove();
+                    if (!removed.includes(videoInfo.chName)) {
+                        removed.push(videoInfo.chName);
+                    }
+                }
+            }
+        });
     });
+    console.log(removed)
+    browser.storage.local.set({ "removed": removed });
+};
+
+function getVideoInfo(text){
+    if (text == null)
+    return;
+    const info = text.match(/作成者: (.*?) 回視聴/);
+    if (info == null)
+    return;
+    if (info.length > 0) {
+        const array = info[0].split(" ");
+        const viewStr = array[array.length - 2];
+        const viewCnt = parseInt(viewStr.replace(/,/g, ''), 10);
+        const chName = array.slice(1, -2).join(" ")
+        return { viewCnt: viewCnt, chName: chName }
+    }
+}
+  
+function observe(func, targetElement) {
+    const mutationObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            func(mutation.addedNodes);
+        });
+    });
+  
+    const observeConfig = {
+        attributes: false,
+        characterData: false,
+        childList: true,
+    };
+  
+    mutationObserver.observe(targetElement, observeConfig);
 }
 
 window.onload = function() {
     console.log("すべてのリソースが読み込まれました");
 };
 
-const mainInterval = setInterval(getVideoByRow, 500);
+const mainInterval = setInterval(temp, 1000);
