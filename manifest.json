@@ -20,7 +20,7 @@
     "default_popup": "popup/settings.html"
   },
   "background": {
-    "scripts": ["background.js"],
+    "scripts": ["background_scripts/background_script.js"],
     "persistent": false
   },
   "content_scripts": [
