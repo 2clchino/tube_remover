@@ -1,40 +1,32 @@
-var url = ""
+var url = "";
+let currentObserver = null;
+const videoNodeSelector = 'ytd-rich-grid-media, ytd-compact-video-renderer';
 function temp() {
     browser.storage.local.get("channels").then(result => {
         const subscribedChannels = result.channels;
         if (subscribedChannels && Array.isArray(subscribedChannels)) {
-            const querySelector = '#video-title';
-            // console.log(subscribedChannels)
+            const querySelector = 'ytd-rich-grid-media, ytd-compact-video-renderer';
             let targetElement = null;
             if (url.includes('/watch?')) {
                 targetElement = document
                     .getElementById('related')
                     ?.querySelector('#items');
-                console.log(targetElement)
             } else {
                 targetElement = document.getElementById('contents');
             }
-            // targetElement = document.getElementById('contents');
-            if (targetElement != null) {
+
+            if (targetElement) {
                 const removeElement = remove(querySelector)(subscribedChannels);
                 removeElement(targetElement.childNodes);
-                // observe(removeElement, targetElement);
+
+                if (currentObserver) currentObserver.disconnect();
+                currentObserver = observe(removeElement, targetElement);
             }
         } else {
             console.log("channelsが見つかりません。");
         }
-    }).catch(error => {
-        console.error("値の取得中にエラーが発生しました: " + error);
-    });
+    }).catch(e => console.error("値の取得中にエラーが発生しました:", e));
 }
-
-browser.runtime.onMessage.addListener((message) => {
-    if (message.command === "initRemover"){
-        url = message.url;
-        console.log(url)
-        console.log("tube remover initialized.")
-    }
-});
 
 const remove = (querySelector) => (subscribedChannels) => (targetNodes) => {
     var removed = []
@@ -65,41 +57,47 @@ const remove = (querySelector) => (subscribedChannels) => (targetNodes) => {
     });
 };
 
-function getVideoInfo(text){
-    if (text == null)
-    return;
-    const info = text.match(/作成者: (.*?) 回視聴/);
-    if (info == null)
-    return;
-    if (info.length > 0) {
-        const array = info[0].split(" ");
-        const viewStr = array[array.length - 2];
-        const viewCnt = parseInt(viewStr.replace(/,/g, ''), 10);
-        const chName = array.slice(1, -2).join(" ")
-        return { viewCnt: viewCnt, chName: chName }
+function getVideoInfo(text) {
+    if (!text) return;
+    const chMatch = text.match(/<div[^>]*id=["']tooltip["'][^>]*>([\s\S]*?)<\/div>/);
+    if (!chMatch) return;
+    const chName = chMatch[1].trim();
+    const patterns = [
+        /([\d,.]+)\s*([万億])?\s*回視聴/,
+        /([\d,.]+)\s*([万億])?\s*人が視聴中/,
+        /作成者:\s*.*?\s+([\d,]+)\s*回視聴/
+    ];
+
+    for (const re of patterns) {
+        const m = text.match(re);
+        if (!m) continue;
+        const rawNum = m[1].replace(/,/g, '');
+        const unit   = m[2] || '';
+        let viewCnt  = parseFloat(rawNum);
+        switch (unit) {
+            case '万': viewCnt *= 1e4; break;
+            case '億': viewCnt *= 1e8; break;
+        }
+        return { chName, viewCnt: Math.round(viewCnt) };
     }
 }
-  
-function observe(func, targetElement) {
-    const mutationObserver = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            func(mutation.addedNodes);
-        });
-    });
-  
-    const observeConfig = {
-        attributes: false,
-        characterData: false,
-        childList: true,
-    };
-  
-    mutationObserver.observe(targetElement, observeConfig);
-}
 
-/*
-window.onload = function() {
-    console.log("すべてのリソースが読み込まれました");
+browser.runtime.onMessage.addListener((message) => {
+    if (message.command === "initRemover") {
+        url = message.url;
+        temp();
+    }
+});
+
+document.addEventListener('yt-navigate-finish', () => {
+    url = location.pathname + location.search;
     temp();
-};*/
+});
 
-const mainInterval = setInterval(temp, 1000);
+function observe(func, targetElement) {
+    const mo = new MutationObserver(mutations => {
+        mutations.forEach(m => func(m.addedNodes));
+    });
+    mo.observe(targetElement, { childList: true });
+    return mo;
+}
